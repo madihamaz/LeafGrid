@@ -5,16 +5,16 @@
     "../../tsconfig.paths.json"
   ],
   "include": [
-    "../../packages/babel-helpers/src/**/*.ts",
+    "../../packages/babel-types/src/**/*.ts",
     "../../lib/globals.d.ts",
     "../../scripts/repo-utils/*.d.ts"
   ],
   "references": [
     {
-      "path": "../../packages/babel-template"
+      "path": "../../packages/babel-helper-string-parser"
     },
     {
-      "path": "../../packages/babel-types"
+      "path": "../../packages/babel-helper-validator-identifier"
     }
   ]
 }
