@@ -1,40 +1,62 @@
 {
-  "name": "@babel/types",
-  "version": "7.25.7",
-  "description": "Babel Types is a Lodash-esque utility library for AST nodes",
-  "author": "The Babel Team (https://babel.dev/team)",
-  "homepage": "https://babel.dev/docs/en/next/babel-types",
-  "bugs": "https://github.com/babel/babel/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22pkg%3A%20types%22+is%3Aopen",
+  "name": "@tanstack/react-query",
+  "version": "5.62.3",
+  "description": "Hooks for managing, caching and syncing asynchronous and remote data in React",
+  "author": "tannerlinsley",
   "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/babel/babel.git",
-    "directory": "packages/babel-types"
+    "url": "https://github.com/TanStack/query.git",
+    "directory": "packages/react-query"
   },
-  "main": "./lib/index.js",
-  "types": "./lib/index-legacy.d.ts",
-  "typesVersions": {
-    ">=4.1": {
-      "lib/index-legacy.d.ts": [
-        "lib/index.d.ts"
-      ]
-    }
+  "homepage": "https://tanstack.com/query",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/tannerlinsley"
   },
+  "type": "module",
+  "types": "build/legacy/index.d.ts",
+  "main": "build/legacy/index.cjs",
+  "module": "build/legacy/index.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./build/modern/index.d.ts",
+        "default": "./build/modern/index.js"
+      },
+      "require": {
+        "types": "./build/modern/index.d.cts",
+        "default": "./build/modern/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "files": [
+    "build",
+    "src",
+    "!src/__tests__",
+    "!build/codemods/node_modules",
+    "!build/codemods/vite.config.ts",
+    "!build/codemods/**/__testfixtures__",
+    "!build/codemods/**/__tests__"
+  ],
   "dependencies": {
-    "@babel/helper-string-parser": "^7.25.7",
-    "@babel/helper-validator-identifier": "^7.25.7",
-    "to-fast-properties": "^2.0.0"
+    "@tanstack/query-core": "5.62.3"
   },
   "devDependencies": {
-    "@babel/generator": "^7.25.7",
-    "@babel/parser": "^7.25.7",
-    "glob": "^7.2.0"
+    "@testing-library/react": "^16.0.1",
+    "@types/react": "npm:types-react@rc",
+    "@types/react-dom": "npm:types-react-dom@rc",
+    "@vitejs/plugin-react": "^4.3.3",
+    "eslint-plugin-react-compiler": "19.0.0-beta-0dec889-20241115",
+    "react": "19.0.0-rc-66855b96-20241106",
+    "react-dom": "19.0.0-rc-66855b96-20241106",
+    "react-error-boundary": "^4.1.2",
+    "@tanstack/query-persist-client-core": "5.62.3"
   },
-  "engines": {
-    "node": ">=6.9.0"
+  "peerDependencies": {
+    "react": "^18 || ^19"
   },
-  "type": "commonjs"
+  "scripts": {}
 }

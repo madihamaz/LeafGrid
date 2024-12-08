@@ -124,7 +124,7 @@ function matchMutation(filters, mutation) {
   return true;
 }
 function hashQueryKeyByOptions(queryKey, options) {
-  const hashFn = (options == null ? void 0 : options.queryKeyHashFn) || hashKey;
+  const hashFn = options?.queryKeyHashFn || hashKey;
   return hashFn(queryKey);
 }
 function hashKey(queryKey) {
@@ -255,7 +255,7 @@ function ensureQueryFn(options, fetchOptions) {
       );
     }
   }
-  if (!options.queryFn && (fetchOptions == null ? void 0 : fetchOptions.initialPromise)) {
+  if (!options.queryFn && fetchOptions?.initialPromise) {
     return () => fetchOptions.initialPromise;
   }
   if (!options.queryFn || options.queryFn === skipToken) {
