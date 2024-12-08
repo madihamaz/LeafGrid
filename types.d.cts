@@ -1,3 +1,33 @@
-export { aY as CancelOptions, I as DataTag, z as DefaultError, aX as DefaultOptions, ac as DefaultedInfiniteQueryObserverOptions, aa as DefaultedQueryObserverOptions, aF as DefinedInfiniteQueryObserverResult, ax as DefinedQueryObserverResult, L as Enabled, af as EnsureInfiniteQueryDataOptions, ae as EnsureQueryDataOptions, ag as FetchInfiniteQueryOptions, an as FetchNextPageOptions, ao as FetchPreviousPageOptions, ad as FetchQueryOptions, aq as FetchStatus, _ as GetNextPageParamFunction, Z as GetPreviousPageParamFunction, $ as InfiniteData, az as InfiniteQueryObserverBaseResult, aC as InfiniteQueryObserverLoadingErrorResult, aB as InfiniteQueryObserverLoadingResult, ab as InfiniteQueryObserverOptions, aA as InfiniteQueryObserverPendingResult, aD as InfiniteQueryObserverRefetchErrorResult, aG as InfiniteQueryObserverResult, aE as InfiniteQueryObserverSuccessResult, a5 as InfiniteQueryPageParamsOptions, V as InitialDataFunction, a4 as InitialPageParam, al as InvalidateOptions, aj as InvalidateQueryFilters, aP as MutateFunction, aO as MutateOptions, aL as MutationFunction, aH as MutationKey, aK as MutationMeta, aQ as MutationObserverBaseResult, aT as MutationObserverErrorResult, aR as MutationObserverIdleResult, aS as MutationObserverLoadingResult, aN as MutationObserverOptions, aV as MutationObserverResult, aU as MutationObserverSuccessResult, aM as MutationOptions, aJ as MutationScope, aI as MutationStatus, a1 as NetworkMode, N as NoInfer, a$ as NotifyEvent, a_ as NotifyEventType, a2 as NotifyOnChangeProps, O as OmitKeyof, a9 as Optional, y as Override, W as PlaceholderDataFunction, X as QueriesPlaceholderDataFunction, aW as QueryClientConfig, J as QueryFunction, T as QueryFunctionContext, A as QueryKey, Y as QueryKeyHashFunction, a0 as QueryMeta, ar as QueryObserverBaseResult, au as QueryObserverLoadingErrorResult, at as QueryObserverLoadingResult, a7 as QueryObserverOptions, as as QueryObserverPendingResult, av as QueryObserverRefetchErrorResult, ay as QueryObserverResult, aw as QueryObserverSuccessResult, a3 as QueryOptions, P as QueryPersister, ap as QueryStatus, ai as RefetchOptions, ak as RefetchQueryFilters, R as Register, am as ResetOptions, ah as ResultOptions, aZ as SetDataOptions, K as StaleTime, a6 as ThrowOnError, G as UnsetMarker, a8 as WithRequired, E as dataTagErrorSymbol, B as dataTagSymbol, F as unsetMarker } from './hydration-C0fOPJLA.cjs';
-import './removable.cjs';
-import './subscribable.cjs';
+import { DefaultError, QueryKey, QueryObserverOptions, OmitKeyof, SkipToken, InfiniteQueryObserverOptions, QueryObserverResult, DefinedQueryObserverResult, InfiniteQueryObserverResult, DefinedInfiniteQueryObserverResult, MutationObserverOptions, MutateFunction, Override, MutationObserverResult } from '@tanstack/query-core';
+
+interface UseBaseQueryOptions<TQueryFnData = unknown, TError = DefaultError, TData = TQueryFnData, TQueryData = TQueryFnData, TQueryKey extends QueryKey = QueryKey> extends QueryObserverOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey> {
+}
+interface UseQueryOptions<TQueryFnData = unknown, TError = DefaultError, TData = TQueryFnData, TQueryKey extends QueryKey = QueryKey> extends OmitKeyof<UseBaseQueryOptions<TQueryFnData, TError, TData, TQueryFnData, TQueryKey>, 'suspense'> {
+}
+interface UseSuspenseQueryOptions<TQueryFnData = unknown, TError = DefaultError, TData = TQueryFnData, TQueryKey extends QueryKey = QueryKey> extends OmitKeyof<UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>, 'queryFn' | 'enabled' | 'throwOnError' | 'placeholderData'> {
+    queryFn?: Exclude<UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>['queryFn'], SkipToken>;
+}
+interface UseInfiniteQueryOptions<TQueryFnData = unknown, TError = DefaultError, TData = TQueryFnData, TQueryData = TQueryFnData, TQueryKey extends QueryKey = QueryKey, TPageParam = unknown> extends OmitKeyof<InfiniteQueryObserverOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TPageParam>, 'suspense'> {
+}
+interface UseSuspenseInfiniteQueryOptions<TQueryFnData = unknown, TError = DefaultError, TData = TQueryFnData, TQueryData = TQueryFnData, TQueryKey extends QueryKey = QueryKey, TPageParam = unknown> extends OmitKeyof<UseInfiniteQueryOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TPageParam>, 'queryFn' | 'enabled' | 'throwOnError' | 'placeholderData'> {
+    queryFn?: Exclude<UseInfiniteQueryOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TPageParam>['queryFn'], SkipToken>;
+}
+type UseBaseQueryResult<TData = unknown, TError = DefaultError> = QueryObserverResult<TData, TError>;
+type UseQueryResult<TData = unknown, TError = DefaultError> = UseBaseQueryResult<TData, TError>;
+type UseSuspenseQueryResult<TData = unknown, TError = DefaultError> = OmitKeyof<DefinedQueryObserverResult<TData, TError>, 'isPlaceholderData' | 'promise'>;
+type DefinedUseQueryResult<TData = unknown, TError = DefaultError> = DefinedQueryObserverResult<TData, TError>;
+type UseInfiniteQueryResult<TData = unknown, TError = DefaultError> = InfiniteQueryObserverResult<TData, TError>;
+type DefinedUseInfiniteQueryResult<TData = unknown, TError = DefaultError> = DefinedInfiniteQueryObserverResult<TData, TError>;
+type UseSuspenseInfiniteQueryResult<TData = unknown, TError = DefaultError> = OmitKeyof<DefinedInfiniteQueryObserverResult<TData, TError>, 'isPlaceholderData' | 'promise'>;
+interface UseMutationOptions<TData = unknown, TError = DefaultError, TVariables = void, TContext = unknown> extends OmitKeyof<MutationObserverOptions<TData, TError, TVariables, TContext>, '_defaulted'> {
+}
+type UseMutateFunction<TData = unknown, TError = DefaultError, TVariables = void, TContext = unknown> = (...args: Parameters<MutateFunction<TData, TError, TVariables, TContext>>) => void;
+type UseMutateAsyncFunction<TData = unknown, TError = DefaultError, TVariables = void, TContext = unknown> = MutateFunction<TData, TError, TVariables, TContext>;
+type UseBaseMutationResult<TData = unknown, TError = DefaultError, TVariables = unknown, TContext = unknown> = Override<MutationObserverResult<TData, TError, TVariables, TContext>, {
+    mutate: UseMutateFunction<TData, TError, TVariables, TContext>;
+}> & {
+    mutateAsync: UseMutateAsyncFunction<TData, TError, TVariables, TContext>;
+};
+type UseMutationResult<TData = unknown, TError = DefaultError, TVariables = unknown, TContext = unknown> = UseBaseMutationResult<TData, TError, TVariables, TContext>;
+
+export type { DefinedUseInfiniteQueryResult, DefinedUseQueryResult, UseBaseMutationResult, UseBaseQueryOptions, UseBaseQueryResult, UseInfiniteQueryOptions, UseInfiniteQueryResult, UseMutateAsyncFunction, UseMutateFunction, UseMutationOptions, UseMutationResult, UseQueryOptions, UseQueryResult, UseSuspenseInfiniteQueryOptions, UseSuspenseInfiniteQueryResult, UseSuspenseQueryOptions, UseSuspenseQueryResult };
