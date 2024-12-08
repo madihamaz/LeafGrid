@@ -1,45 +1,31 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
-const all_1 = __importDefault(require("./configs/all"));
-const base_1 = __importDefault(require("./configs/base"));
-const disable_type_checked_1 = __importDefault(require("./configs/disable-type-checked"));
-const eslint_recommended_1 = __importDefault(require("./configs/eslint-recommended"));
-const recommended_1 = __importDefault(require("./configs/recommended"));
-const recommended_type_checked_1 = __importDefault(require("./configs/recommended-type-checked"));
-const recommended_type_checked_only_1 = __importDefault(require("./configs/recommended-type-checked-only"));
-const strict_1 = __importDefault(require("./configs/strict"));
-const strict_type_checked_1 = __importDefault(require("./configs/strict-type-checked"));
-const strict_type_checked_only_1 = __importDefault(require("./configs/strict-type-checked-only"));
-const stylistic_1 = __importDefault(require("./configs/stylistic"));
-const stylistic_type_checked_1 = __importDefault(require("./configs/stylistic-type-checked"));
-const stylistic_type_checked_only_1 = __importDefault(require("./configs/stylistic-type-checked-only"));
-const rules_1 = __importDefault(require("./rules"));
-// note - cannot migrate this to an import statement because it will make TSC copy the package.json to the dist folder
-const { name, version } = require('../package.json');
-module.exports = {
-    configs: {
-        all: all_1.default,
-        base: base_1.default,
-        'disable-type-checked': disable_type_checked_1.default,
-        'eslint-recommended': eslint_recommended_1.default,
-        recommended: recommended_1.default,
-        /** @deprecated - please use "recommended-type-checked" instead. */
-        'recommended-requiring-type-checking': recommended_type_checked_1.default,
-        'recommended-type-checked': recommended_type_checked_1.default,
-        'recommended-type-checked-only': recommended_type_checked_only_1.default,
-        strict: strict_1.default,
-        'strict-type-checked': strict_type_checked_1.default,
-        'strict-type-checked-only': strict_type_checked_only_1.default,
-        stylistic: stylistic_1.default,
-        'stylistic-type-checked': stylistic_type_checked_1.default,
-        'stylistic-type-checked-only': stylistic_type_checked_only_1.default,
-    },
-    meta: {
-        name,
-        version,
-    },
-    rules: rules_1.default,
-};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ScopeManager = exports.PatternVisitor = exports.Visitor = exports.Reference = exports.analyze = void 0;
+var analyze_1 = require("./analyze");
+Object.defineProperty(exports, "analyze", { enumerable: true, get: function () { return analyze_1.analyze; } });
+__exportStar(require("./definition"), exports);
+var Reference_1 = require("./referencer/Reference");
+Object.defineProperty(exports, "Reference", { enumerable: true, get: function () { return Reference_1.Reference; } });
+var Visitor_1 = require("./referencer/Visitor");
+Object.defineProperty(exports, "Visitor", { enumerable: true, get: function () { return Visitor_1.Visitor; } });
+var PatternVisitor_1 = require("./referencer/PatternVisitor");
+Object.defineProperty(exports, "PatternVisitor", { enumerable: true, get: function () { return PatternVisitor_1.PatternVisitor; } });
+__exportStar(require("./scope"), exports);
+var ScopeManager_1 = require("./ScopeManager");
+Object.defineProperty(exports, "ScopeManager", { enumerable: true, get: function () { return ScopeManager_1.ScopeManager; } });
+__exportStar(require("./variable"), exports);
 //# sourceMappingURL=index.js.map
