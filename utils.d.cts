@@ -1,3 +1,4 @@
-export { g as MutationFilters, j as QueryFilters, b9 as QueryTypeFilter, S as SkipToken, U as Updater, bn as addToEnd, bo as addToStart, bp as ensureQueryFn, bb as functionalUpdate, h as hashKey, bg as hashQueryKeyByOptions, bj as isPlainArray, bk as isPlainObject, i as isServer, bc as isValidTimeout, k as keepPreviousData, f as matchMutation, m as matchQuery, ba as noop, bh as partialMatchKey, bm as replaceData, r as replaceEqualDeep, bf as resolveEnabled, be as resolveStaleTime, bi as shallowEqualObjects, s as skipToken, bl as sleep, bd as timeUntilStale } from './hydration-C0fOPJLA.cjs';
-import './removable.cjs';
-import './subscribable.cjs';
+declare function shouldThrowError<T extends (...args: Array<any>) => boolean>(throwError: boolean | T | undefined, params: Parameters<T>): boolean;
+declare function noop(): void;
+
+export { noop, shouldThrowError };
