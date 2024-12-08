@@ -1,50 +1,87 @@
 {
-  "name": "@babel/parser",
-  "version": "7.25.7",
-  "description": "A JavaScript parser",
-  "author": "The Babel Team (https://babel.dev/team)",
-  "homepage": "https://babel.dev/docs/en/next/babel-parser",
-  "bugs": "https://github.com/babel/babel/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22pkg%3A+parser+%28babylon%29%22+is%3Aopen",
-  "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  },
-  "keywords": [
-    "babel",
-    "javascript",
-    "parser",
-    "tc39",
-    "ecmascript",
-    "@babel/parser"
+  "name": "@typescript-eslint/parser",
+  "version": "8.8.1",
+  "description": "An ESLint custom parser which leverages TypeScript ESTree",
+  "files": [
+    "dist",
+    "_ts4.3",
+    "README.md",
+    "LICENSE"
   ],
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/babel/babel.git",
-    "directory": "packages/babel-parser"
+    "url": "https://github.com/typescript-eslint/typescript-eslint.git",
+    "directory": "packages/parser"
   },
-  "main": "./lib/index.js",
-  "types": "./typings/babel-parser.d.ts",
-  "files": [
-    "bin",
-    "lib",
-    "typings/babel-parser.d.ts",
-    "index.cjs"
+  "bugs": {
+    "url": "https://github.com/typescript-eslint/typescript-eslint/issues"
+  },
+  "homepage": "https://typescript-eslint.io/packages/parser",
+  "license": "BSD-2-Clause",
+  "keywords": [
+    "ast",
+    "ecmascript",
+    "javascript",
+    "typescript",
+    "parser",
+    "syntax",
+    "eslint"
   ],
-  "engines": {
-    "node": ">=6.0.0"
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "postbuild": "downlevel-dts dist _ts4.3/dist --to=4.3",
+    "clean": "tsc -b tsconfig.build.json --clean",
+    "postclean": "rimraf dist && rimraf _ts4.3 && rimraf coverage",
+    "format": "prettier --write \"./**/*.{ts,mts,cts,tsx,js,mjs,cjs,jsx,json,md,css}\" --ignore-path ../../.prettierignore",
+    "lint": "npx nx lint",
+    "test": "jest --coverage",
+    "typecheck": "tsc --noEmit"
   },
-  "# dependencies": "This package doesn't actually have runtime dependencies. @babel/types is only needed for type definitions.",
+  "peerDependencies": {
+    "eslint": "^8.57.0 || ^9.0.0"
+  },
   "dependencies": {
-    "@babel/types": "^7.25.7"
+    "@typescript-eslint/scope-manager": "8.8.1",
+    "@typescript-eslint/types": "8.8.1",
+    "@typescript-eslint/typescript-estree": "8.8.1",
+    "@typescript-eslint/visitor-keys": "8.8.1",
+    "debug": "^4.3.4"
   },
   "devDependencies": {
-    "@babel/code-frame": "^7.25.7",
-    "@babel/helper-check-duplicate-nodes": "^7.25.7",
-    "@babel/helper-fixtures": "^7.25.7",
-    "@babel/helper-string-parser": "^7.25.7",
-    "@babel/helper-validator-identifier": "^7.25.7",
-    "charcodes": "^0.2.0"
+    "@jest/types": "29.6.3",
+    "@types/glob": "*",
+    "downlevel-dts": "*",
+    "glob": "*",
+    "jest": "29.7.0",
+    "prettier": "^3.2.5",
+    "rimraf": "*",
+    "typescript": "*"
   },
-  "bin": "./bin/babel-parser.js",
-  "type": "commonjs"
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/typescript-eslint"
+  },
+  "typesVersions": {
+    "<4.7": {
+      "*": [
+        "_ts4.3/*"
+      ]
+    }
+  }
 }
