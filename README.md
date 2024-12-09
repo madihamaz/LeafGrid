@@ -1,311 +1,1265 @@
-[![npm version](https://img.shields.io/npm/v/eslint.svg)](https://www.npmjs.com/package/eslint)
-[![Downloads](https://img.shields.io/npm/dm/eslint.svg)](https://www.npmjs.com/package/eslint)
-[![Build Status](https://github.com/eslint/eslint/workflows/CI/badge.svg)](https://github.com/eslint/eslint/actions)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Feslint%2Feslint.svg?type=shield)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Feslint%2Feslint?ref=badge_shield)
-<br />
-[![Open Collective Backers](https://img.shields.io/opencollective/backers/eslint)](https://opencollective.com/eslint)
-[![Open Collective Sponsors](https://img.shields.io/opencollective/sponsors/eslint)](https://opencollective.com/eslint)
-[![Follow us on Twitter](https://img.shields.io/twitter/follow/geteslint?label=Follow&style=social)](https://twitter.com/intent/user?screen_name=geteslint)
+# Glob
 
-# ESLint
+Match files using the patterns the shell uses.
 
-[Website](https://eslint.org) |
-[Configure ESLint](https://eslint.org/docs/latest/use/configure) |
-[Rules](https://eslint.org/docs/rules/) |
-[Contribute to ESLint](https://eslint.org/docs/latest/contribute) |
-[Report Bugs](https://eslint.org/docs/latest/contribute/report-bugs) |
-[Code of Conduct](https://eslint.org/conduct) |
-[Twitter](https://twitter.com/geteslint) |
-[Discord](https://eslint.org/chat) |
-[Mastodon](https://fosstodon.org/@eslint)
+The most correct and second fastest glob implementation in
+JavaScript. (See **Comparison to Other JavaScript Glob
+Implementations** at the bottom of this readme.)
 
-ESLint is a tool for identifying and reporting on patterns found in ECMAScript/JavaScript code. In many ways, it is similar to JSLint and JSHint with a few exceptions:
+![a fun cartoon logo made of glob characters](https://github.com/isaacs/node-glob/raw/main/logo/glob.png)
 
-* ESLint uses [Espree](https://github.com/eslint/js/tree/main/packages/espree) for JavaScript parsing.
-* ESLint uses an AST to evaluate patterns in code.
-* ESLint is completely pluggable, every single rule is a plugin and you can add more at runtime.
+## Usage
 
-## Table of Contents
+Install with npm
 
-1. [Installation and Usage](#installation-and-usage)
-1. [Configuration](#configuration)
-1. [Version Support](#version-support)
-1. [Code of Conduct](#code-of-conduct)
-1. [Filing Issues](#filing-issues)
-1. [Frequently Asked Questions](#frequently-asked-questions)
-1. [Releases](#releases)
-1. [Security Policy](#security-policy)
-1. [Semantic Versioning Policy](#semantic-versioning-policy)
-1. [Stylistic Rule Updates](#stylistic-rule-updates)
-1. [License](#license)
-1. [Team](#team)
-1. [Sponsors](#sponsors)
-1. [Technology Sponsors](#technology-sponsors) <!-- markdownlint-disable-line MD051 -->
-
-## Installation and Usage
-
-Prerequisites: [Node.js](https://nodejs.org/) (`^18.18.0`, `^20.9.0`, or `>=21.1.0`) built with SSL support. (If you are using an official Node.js distribution, SSL is always built in.)
-
-You can install and configure ESLint using this command:
-
-```shell
-npm init @eslint/config@latest
+```
+npm i glob
 ```
 
-After that, you can run ESLint on any file or directory like this:
-
-```shell
-npx eslint yourfile.js
-```
-
-## Configuration
-
-You can configure rules in your `eslint.config.js` files as in this example:
+**Note** the npm package name is _not_ `node-glob` that's a
+different thing that was abandoned years ago. Just `glob`.
 
 ```js
-export default [
-    {
-        files: ["**/*.js", "**/*.cjs", "**/*.mjs"],
-        rules: {
-            "prefer-const": "warn",
-            "no-constant-binary-expression": "error"
-        }
-    }
-];
+// load using import
+import { glob, globSync, globStream, globStreamSync, Glob } from 'glob'
+// or using commonjs, that's fine, too
+const {
+  glob,
+  globSync,
+  globStream,
+  globStreamSync,
+  Glob,
+} = require('glob')
+
+// the main glob() and globSync() resolve/return array of filenames
+
+// all js files, but don't look in node_modules
+const jsfiles = await glob('**/*.js', { ignore: 'node_modules/**' })
+
+// pass in a signal to cancel the glob walk
+const stopAfter100ms = await glob('**/*.css', {
+  signal: AbortSignal.timeout(100),
+})
+
+// multiple patterns supported as well
+const images = await glob(['css/*.{png,jpeg}', 'public/*.{png,jpeg}'])
+
+// but of course you can do that with the glob pattern also
+// the sync function is the same, just returns a string[] instead
+// of Promise<string[]>
+const imagesAlt = globSync('{css,public}/*.{png,jpeg}')
+
+// you can also stream them, this is a Minipass stream
+const filesStream = globStream(['**/*.dat', 'logs/**/*.log'])
+
+// construct a Glob object if you wanna do it that way, which
+// allows for much faster walks if you have to look in the same
+// folder multiple times.
+const g = new Glob('**/foo', {})
+// glob objects are async iterators, can also do globIterate() or
+// g.iterate(), same deal
+for await (const file of g) {
+  console.log('found a foo file:', file)
+}
+// pass a glob as the glob options to reuse its settings and caches
+const g2 = new Glob('**/bar', g)
+// sync iteration works as well
+for (const file of g2) {
+  console.log('found a bar file:', file)
+}
+
+// you can also pass withFileTypes: true to get Path objects
+// these are like a Dirent, but with some more added powers
+// check out http://npm.im/path-scurry for more info on their API
+const g3 = new Glob('**/baz/**', { withFileTypes: true })
+g3.stream().on('data', path => {
+  console.log(
+    'got a path object',
+    path.fullpath(),
+    path.isDirectory(),
+    path.readdirSync().map(e => e.name),
+  )
+})
+
+// if you use stat:true and withFileTypes, you can sort results
+// by things like modified time, filter by permission mode, etc.
+// All Stats fields will be available in that case. Slightly
+// slower, though.
+// For example:
+const results = await glob('**', { stat: true, withFileTypes: true })
+
+const timeSortedFiles = results
+  .sort((a, b) => a.mtimeMs - b.mtimeMs)
+  .map(path => path.fullpath())
+
+const groupReadableFiles = results
+  .filter(path => path.mode & 0o040)
+  .map(path => path.fullpath())
+
+// custom ignores can be done like this, for example by saying
+// you'll ignore all markdown files, and all folders named 'docs'
+const customIgnoreResults = await glob('**', {
+  ignore: {
+    ignored: p => /\.md$/.test(p.name),
+    childrenIgnored: p => p.isNamed('docs'),
+  },
+})
+
+// another fun use case, only return files with the same name as
+// their parent folder, plus either `.ts` or `.js`
+const folderNamedModules = await glob('**/*.{ts,js}', {
+  ignore: {
+    ignored: p => {
+      const pp = p.parent
+      return !(p.isNamed(pp.name + '.ts') || p.isNamed(pp.name + '.js'))
+    },
+  },
+})
+
+// find all files edited in the last hour, to do this, we ignore
+// all of them that are more than an hour old
+const newFiles = await glob('**', {
+  // need stat so we have mtime
+  stat: true,
+  // only want the files, not the dirs
+  nodir: true,
+  ignore: {
+    ignored: p => {
+      return new Date() - p.mtime > 60 * 60 * 1000
+    },
+    // could add similar childrenIgnored here as well, but
+    // directory mtime is inconsistent across platforms, so
+    // probably better not to, unless you know the system
+    // tracks this reliably.
+  },
+})
 ```
 
-The names `"prefer-const"` and `"no-constant-binary-expression"` are the names of [rules](https://eslint.org/docs/rules) in ESLint. The first value is the error level of the rule and can be one of these values:
+**Note** Glob patterns should always use `/` as a path separator,
+even on Windows systems, as `\` is used to escape glob
+characters. If you wish to use `\` as a path separator _instead
+of_ using it as an escape character on Windows platforms, you may
+set `windowsPathsNoEscape:true` in the options. In this mode,
+special glob characters cannot be escaped, making it impossible
+to match a literal `*` `?` and so on in filenames.
+
+## Command Line Interface
+
+```
+$ glob -h
+
+Usage:
+  glob [options] [<pattern> [<pattern> ...]]
+
+Expand the positional glob expression arguments into any matching file system
+paths found.
+
+  -c<command> --cmd=<command>
+                         Run the command provided, passing the glob expression
+                         matches as arguments.
+
+  -A --all               By default, the glob cli command will not expand any
+                         arguments that are an exact match to a file on disk.
+
+                         This prevents double-expanding, in case the shell
+                         expands an argument whose filename is a glob
+                         expression.
+
+                         For example, if 'app/*.ts' would match 'app/[id].ts',
+                         then on Windows powershell or cmd.exe, 'glob app/*.ts'
+                         will expand to 'app/[id].ts', as expected. However, in
+                         posix shells such as bash or zsh, the shell will first
+                         expand 'app/*.ts' to a list of filenames. Then glob
+                         will look for a file matching 'app/[id].ts' (ie,
+                         'app/i.ts' or 'app/d.ts'), which is unexpected.
+
+                         Setting '--all' prevents this behavior, causing glob to
+                         treat ALL patterns as glob expressions to be expanded,
+                         even if they are an exact match to a file on disk.
+
+                         When setting this option, be sure to enquote arguments
+                         so that the shell will not expand them prior to passing
+                         them to the glob command process.
+
+  -a --absolute          Expand to absolute paths
+  -d --dot-relative      Prepend './' on relative matches
+  -m --mark              Append a / on any directories matched
+  -x --posix             Always resolve to posix style paths, using '/' as the
+                         directory separator, even on Windows. Drive letter
+                         absolute matches on Windows will be expanded to their
+                         full resolved UNC maths, eg instead of 'C:\foo\bar', it
+                         will expand to '//?/C:/foo/bar'.
+
+  -f --follow            Follow symlinked directories when expanding '**'
+  -R --realpath          Call 'fs.realpath' on all of the results. In the case
+                         of an entry that cannot be resolved, the entry is
+                         omitted. This incurs a slight performance penalty, of
+                         course, because of the added system calls.
 
-* `"off"` or `0` - turn the rule off
-* `"warn"` or `1` - turn the rule on as a warning (doesn't affect exit code)
-* `"error"` or `2` - turn the rule on as an error (exit code will be 1)
+  -s --stat              Call 'fs.lstat' on all entries, whether required or not
+                         to determine if it's a valid match.
 
-The three error levels allow you fine-grained control over how ESLint applies rules (for more configuration options and details, see the [configuration docs](https://eslint.org/docs/latest/use/configure)).
+  -b --match-base        Perform a basename-only match if the pattern does not
+                         contain any slash characters. That is, '*.js' would be
+                         treated as equivalent to '**/*.js', matching js files
+                         in all directories.
 
-## Version Support
+  --dot                  Allow patterns to match files/directories that start
+                         with '.', even if the pattern does not start with '.'
 
-The ESLint team provides ongoing support for the current version and six months of limited support for the previous version. Limited support includes critical bug fixes, security issues, and compatibility issues only.
+  --nobrace              Do not expand {...} patterns
+  --nocase               Perform a case-insensitive match. This defaults to
+                         'true' on macOS and Windows platforms, and false on all
+                         others.
 
-ESLint offers commercial support for both current and previous versions through our partners, [Tidelift][tidelift] and [HeroDevs][herodevs].
+                         Note: 'nocase' should only be explicitly set when it is
+                         known that the filesystem's case sensitivity differs
+                         from the platform default. If set 'true' on
+                         case-insensitive file systems, then the walk may return
+                         more or less results than expected.
 
-See [Version Support](https://eslint.org/version-support) for more details.
+  --nodir                Do not match directories, only files.
 
-## Code of Conduct
+                         Note: to *only* match directories, append a '/' at the
+                         end of the pattern.
 
-ESLint adheres to the [OpenJS Foundation Code of Conduct](https://eslint.org/conduct).
+  --noext                Do not expand extglob patterns, such as '+(a|b)'
+  --noglobstar           Do not expand '**' against multiple path portions. Ie,
+                         treat it as a normal '*' instead.
 
-## Filing Issues
+  --windows-path-no-escape
+                         Use '\' as a path separator *only*, and *never* as an
+                         escape character. If set, all '\' characters are
+                         replaced with '/' in the pattern.
 
-Before filing an issue, please be sure to read the guidelines for what you're reporting:
+  -D<n> --max-depth=<n>  Maximum depth to traverse from the current working
+                         directory
 
-* [Bug Report](https://eslint.org/docs/latest/contribute/report-bugs)
-* [Propose a New Rule](https://eslint.org/docs/latest/contribute/propose-new-rule)
-* [Proposing a Rule Change](https://eslint.org/docs/latest/contribute/propose-rule-change)
-* [Request a Change](https://eslint.org/docs/latest/contribute/request-change)
+  -C<cwd> --cwd=<cwd>    Current working directory to execute/match in
+  -r<root> --root=<root> A string path resolved against the 'cwd', which is used
+                         as the starting point for absolute patterns that start
+                         with '/' (but not drive letters or UNC paths on
+                         Windows).
 
-## Frequently Asked Questions
+                         Note that this *doesn't* necessarily limit the walk to
+                         the 'root' directory, and doesn't affect the cwd
+                         starting point for non-absolute patterns. A pattern
+                         containing '..' will still be able to traverse out of
+                         the root directory, if it is not an actual root
+                         directory on the filesystem, and any non-absolute
+                         patterns will still be matched in the 'cwd'.
 
-### Does ESLint support JSX?
+                         To start absolute and non-absolute patterns in the same
+                         path, you can use '--root=' to set it to the empty
+                         string. However, be aware that on Windows systems, a
+                         pattern like 'x:/*' or '//host/share/*' will *always*
+                         start in the 'x:/' or '//host/share/' directory,
+                         regardless of the --root setting.
 
-Yes, ESLint natively supports parsing JSX syntax (this must be enabled in [configuration](https://eslint.org/docs/latest/use/configure)). Please note that supporting JSX syntax *is not* the same as supporting React. React applies specific semantics to JSX syntax that ESLint doesn't recognize. We recommend using [eslint-plugin-react](https://www.npmjs.com/package/eslint-plugin-react) if you are using React and want React semantics.
+  --platform=<platform>  Defaults to the value of 'process.platform' if
+                         available, or 'linux' if not. Setting --platform=win32
+                         on non-Windows systems may cause strange behavior!
 
-### Does Prettier replace ESLint?
+  -i<ignore> --ignore=<ignore>
+                         Glob patterns to ignore Can be set multiple times
+  -v --debug             Output a huge amount of noisy debug information about
+                         patterns as they are parsed and used to match files.
 
-No, ESLint and Prettier have different jobs: ESLint is a linter (looking for problematic patterns) and Prettier is a code formatter. Using both tools is common, refer to [Prettier's documentation](https://prettier.io/docs/en/install#eslint-and-other-linters) to learn how to configure them to work well with each other.
+  -h --help              Show this usage information
+```
 
-### What ECMAScript versions does ESLint support?
+## `glob(pattern: string | string[], options?: GlobOptions) => Promise<string[] | Path[]>`
 
-ESLint has full support for ECMAScript 3, 5, and every year from 2015 up until the most recent stage 4 specification (the default). You can set your desired ECMAScript syntax and other settings (like global variables) through [configuration](https://eslint.org/docs/latest/use/configure).
+Perform an asynchronous glob search for the pattern(s) specified.
+Returns
+[Path](https://isaacs.github.io/path-scurry/classes/PathBase)
+objects if the `withFileTypes` option is set to `true`. See below
+for full options field desciptions.
 
-### What about experimental features?
+## `globSync(pattern: string | string[], options?: GlobOptions) => string[] | Path[]`
 
-ESLint's parser only officially supports the latest final ECMAScript standard. We will make changes to core rules in order to avoid crashes on stage 3 ECMAScript syntax proposals (as long as they are implemented using the correct experimental ESTree syntax). We may make changes to core rules to better work with language extensions (such as JSX, Flow, and TypeScript) on a case-by-case basis.
+Synchronous form of `glob()`.
 
-In other cases (including if rules need to warn on more or fewer cases due to new syntax, rather than just not crashing), we recommend you use other parsers and/or rule plugins. If you are using Babel, you can use [@babel/eslint-parser](https://www.npmjs.com/package/@babel/eslint-parser) and [@babel/eslint-plugin](https://www.npmjs.com/package/@babel/eslint-plugin) to use any option available in Babel.
+Alias: `glob.sync()`
 
-Once a language feature has been adopted into the ECMAScript standard (stage 4 according to the [TC39 process](https://tc39.github.io/process-document/)), we will accept issues and pull requests related to the new feature, subject to our [contributing guidelines](https://eslint.org/docs/latest/contribute). Until then, please use the appropriate parser and plugin(s) for your experimental feature.
+## `globIterate(pattern: string | string[], options?: GlobOptions) => AsyncGenerator<string>`
 
-### Which Node.js versions does ESLint support?
+Return an async iterator for walking glob pattern matches.
 
-ESLint updates the supported Node.js versions with each major release of ESLint. At that time, ESLint's supported Node.js versions are updated to be:
+Alias: `glob.iterate()`
 
-1. The most recent maintenance release of Node.js
-1. The lowest minor version of the Node.js LTS release that includes the features the ESLint team wants to use.
-1. The Node.js Current release
+## `globIterateSync(pattern: string | string[], options?: GlobOptions) => Generator<string>`
 
-ESLint is also expected to work with Node.js versions released after the Node.js Current release.
+Return a sync iterator for walking glob pattern matches.
 
-Refer to the [Quick Start Guide](https://eslint.org/docs/latest/use/getting-started#prerequisites) for the officially supported Node.js versions for a given ESLint release.
+Alias: `glob.iterate.sync()`, `glob.sync.iterate()`
 
-### Where to ask for help?
+## `globStream(pattern: string | string[], options?: GlobOptions) => Minipass<string | Path>`
 
-Open a [discussion](https://github.com/eslint/eslint/discussions) or stop by our [Discord server](https://eslint.org/chat).
+Return a stream that emits all the strings or `Path` objects and
+then emits `end` when completed.
 
-### Why doesn't ESLint lock dependency versions?
+Alias: `glob.stream()`
 
-Lock files like `package-lock.json` are helpful for deployed applications. They ensure that dependencies are consistent between environments and across deployments.
+## `globStreamSync(pattern: string | string[], options?: GlobOptions) => Minipass<string | Path>`
 
-Packages like `eslint` that get published to the npm registry do not include lock files. `npm install eslint` as a user will respect version constraints in ESLint's `package.json`. ESLint and its dependencies will be included in the user's lock file if one exists, but ESLint's own lock file would not be used.
+Syncronous form of `globStream()`. Will read all the matches as
+fast as you consume them, even all in a single tick if you
+consume them immediately, but will still respond to backpressure
+if they're not consumed immediately.
 
-We intentionally don't lock dependency versions so that we have the latest compatible dependency versions in development and CI that our users get when installing ESLint in a project.
+Alias: `glob.stream.sync()`, `glob.sync.stream()`
 
-The Twilio blog has a [deeper dive](https://www.twilio.com/blog/lockfiles-nodejs) to learn more.
+## `hasMagic(pattern: string | string[], options?: GlobOptions) => boolean`
 
-## Releases
+Returns `true` if the provided pattern contains any "magic" glob
+characters, given the options provided.
 
-We have scheduled releases every two weeks on Friday or Saturday. You can follow a [release issue](https://github.com/eslint/eslint/issues?q=is%3Aopen+is%3Aissue+label%3Arelease) for updates about the scheduling of any particular release.
+Brace expansion is not considered "magic" unless the
+`magicalBraces` option is set, as brace expansion just turns one
+string into an array of strings. So a pattern like `'x{a,b}y'`
+would return `false`, because `'xay'` and `'xby'` both do not
+contain any magic glob characters, and it's treated the same as
+if you had called it on `['xay', 'xby']`. When
+`magicalBraces:true` is in the options, brace expansion _is_
+treated as a pattern having magic.
 
-## Security Policy
+## `escape(pattern: string, options?: GlobOptions) => string`
 
-ESLint takes security seriously. We work hard to ensure that ESLint is safe for everyone and that security issues are addressed quickly and responsibly. Read the full [security policy](https://github.com/eslint/.github/blob/master/SECURITY.md).
+Escape all magic characters in a glob pattern, so that it will
+only ever match literal strings
 
-## Semantic Versioning Policy
+If the `windowsPathsNoEscape` option is used, then characters are
+escaped by wrapping in `[]`, because a magic character wrapped in
+a character class can only be satisfied by that exact character.
 
-ESLint follows [semantic versioning](https://semver.org). However, due to the nature of ESLint as a code quality tool, it's not always clear when a minor or major version bump occurs. To help clarify this for everyone, we've defined the following semantic versioning policy for ESLint:
+Slashes (and backslashes in `windowsPathsNoEscape` mode) cannot
+be escaped or unescaped.
 
-* Patch release (intended to not break your lint build)
-    * A bug fix in a rule that results in ESLint reporting fewer linting errors.
-    * A bug fix to the CLI or core (including formatters).
-    * Improvements to documentation.
-    * Non-user-facing changes such as refactoring code, adding, deleting, or modifying tests, and increasing test coverage.
-    * Re-releasing after a failed release (i.e., publishing a release that doesn't work for anyone).
-* Minor release (might break your lint build)
-    * A bug fix in a rule that results in ESLint reporting more linting errors.
-    * A new rule is created.
-    * A new option to an existing rule that does not result in ESLint reporting more linting errors by default.
-    * A new addition to an existing rule to support a newly-added language feature (within the last 12 months) that will result in ESLint reporting more linting errors by default.
-    * An existing rule is deprecated.
-    * A new CLI capability is created.
-    * New capabilities to the public API are added (new classes, new methods, new arguments to existing methods, etc.).
-    * A new formatter is created.
-    * `eslint:recommended` is updated and will result in strictly fewer linting errors (e.g., rule removals).
-* Major release (likely to break your lint build)
-    * `eslint:recommended` is updated and may result in new linting errors (e.g., rule additions, most rule option updates).
-    * A new option to an existing rule that results in ESLint reporting more linting errors by default.
-    * An existing formatter is removed.
-    * Part of the public API is removed or changed in an incompatible way. The public API includes:
-        * Rule schemas
-        * Configuration schema
-        * Command-line options
-        * Node.js API
-        * Rule, formatter, parser, plugin APIs
-
-According to our policy, any minor update may report more linting errors than the previous release (ex: from a bug fix). As such, we recommend using the tilde (`~`) in `package.json` e.g. `"eslint": "~3.1.0"` to guarantee the results of your builds.
-
-## Stylistic Rule Updates
-
-Stylistic rules are frozen according to [our policy](https://eslint.org/blog/2020/05/changes-to-rules-policies) on how we evaluate new rules and rule changes.
-This means:
-
-* **Bug fixes**: We will still fix bugs in stylistic rules.
-* **New ECMAScript features**: We will also make sure stylistic rules are compatible with new ECMAScript features.
-* **New options**: We will **not** add any new options to stylistic rules unless an option is the only way to fix a bug or support a newly-added ECMAScript feature.
-
-## License
-
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Feslint%2Feslint.svg?type=large)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Feslint%2Feslint?ref=badge_large)
-
-## Team
-
-These folks keep the project moving and are resources for help.
-
-<!-- NOTE: This section is autogenerated. Do not manually edit.-->
-
-<!--teamstart-->
-
-### Technical Steering Committee (TSC)
-
-The people who manage releases, review feature requests, and meet regularly to ensure ESLint is properly maintained.
-
-<table><tbody><tr><td align="center" valign="top" width="11%">
-<a href="https://github.com/nzakas">
-<img src="https://github.com/nzakas.png?s=75" width="75" height="75" alt="Nicholas C. Zakas's Avatar"><br />
-Nicholas C. Zakas
-</a>
-</td><td align="center" valign="top" width="11%">
-<a href="https://github.com/fasttime">
-<img src="https://github.com/fasttime.png?s=75" width="75" height="75" alt="Francesco Trotta's Avatar"><br />
-Francesco Trotta
-</a>
-</td><td align="center" valign="top" width="11%">
-<a href="https://github.com/mdjermanovic">
-<img src="https://github.com/mdjermanovic.png?s=75" width="75" height="75" alt="Milos Djermanovic's Avatar"><br />
-Milos Djermanovic
-</a>
-</td></tr></tbody></table>
-
-### Reviewers
-
-The people who review and implement new features.
-
-<table><tbody><tr><td align="center" valign="top" width="11%">
-<a href="https://github.com/aladdin-add">
-<img src="https://github.com/aladdin-add.png?s=75" width="75" height="75" alt="唯然's Avatar"><br />
-唯然
-</a>
-</td><td align="center" valign="top" width="11%">
-<a href="https://github.com/snitin315">
-<img src="https://github.com/snitin315.png?s=75" width="75" height="75" alt="Nitin Kumar's Avatar"><br />
-Nitin Kumar
-</a>
-</td></tr></tbody></table>
-
-### Committers
-
-The people who review and fix bugs and help triage issues.
-
-<table><tbody><tr><td align="center" valign="top" width="11%">
-<a href="https://github.com/JoshuaKGoldberg">
-<img src="https://github.com/JoshuaKGoldberg.png?s=75" width="75" height="75" alt="Josh Goldberg ✨'s Avatar"><br />
-Josh Goldberg ✨
-</a>
-</td><td align="center" valign="top" width="11%">
-<a href="https://github.com/Tanujkanti4441">
-<img src="https://github.com/Tanujkanti4441.png?s=75" width="75" height="75" alt="Tanuj Kanti's Avatar"><br />
-Tanuj Kanti
-</a>
-</td></tr></tbody></table>
-
-### Website Team
-
-Team members who focus specifically on eslint.org
-
-<table><tbody><tr><td align="center" valign="top" width="11%">
-<a href="https://github.com/amareshsm">
-<img src="https://github.com/amareshsm.png?s=75" width="75" height="75" alt="Amaresh  S M's Avatar"><br />
-Amaresh  S M
-</a>
-</td><td align="center" valign="top" width="11%">
-<a href="https://github.com/harish-sethuraman">
-<img src="https://github.com/harish-sethuraman.png?s=75" width="75" height="75" alt="Strek's Avatar"><br />
-Strek
-</a>
-</td><td align="center" valign="top" width="11%">
-<a href="https://github.com/kecrily">
-<img src="https://github.com/kecrily.png?s=75" width="75" height="75" alt="Percy Ma's Avatar"><br />
-Percy Ma
-</a>
-</td></tr></tbody></table>
-
-<!--teamend-->
-
-## Sponsors
-
-The following companies, organizations, and individuals support ESLint's ongoing maintenance and development. [Become a Sponsor](https://eslint.org/donate) to get your logo on our README and website.
-
-<!-- NOTE: This section is autogenerated. Do not manually edit.-->
-<!--sponsorsstart-->
-<h3>Platinum Sponsors</h3>
-<p><a href="https://automattic.com"><img src="https://images.opencollective.com/automattic/d0ef3e1/logo.png" alt="Automattic" height="128"></a> <a href="https://www.airbnb.com/"><img src="https://images.opencollective.com/airbnb/d327d66/logo.png" alt="Airbnb" height="128"></a></p><h3>Gold Sponsors</h3>
-<p><a href="https://trunk.io/"><img src="https://images.opencollective.com/trunkio/fb92d60/avatar.png" alt="trunk.io" height="96"></a></p><h3>Silver Sponsors</h3>
-<p><a href="https://www.jetbrains.com/"><img src="https://images.opencollective.com/jetbrains/fe76f99/logo.png" alt="JetBrains" height="64"></a> <a href="https://liftoff.io/"><img src="https://images.opencollective.com/liftoff/5c4fa84/logo.png" alt="Liftoff" height="64"></a> <a href="https://americanexpress.io"><img src="https://avatars.githubusercontent.com/u/3853301?v=4" alt="American Express" height="64"></a> <a href="https://www.workleap.com"><img src="https://avatars.githubusercontent.com/u/53535748?u=d1e55d7661d724bf2281c1bfd33cb8f99fe2465f&v=4" alt="Workleap" height="64"></a></p><h3>Bronze Sponsors</h3>
-<p><a href="https://www.wordhint.net/"><img src="https://images.opencollective.com/wordhint/be86813/avatar.png" alt="WordHint" height="32"></a> <a href="https://www.crosswordsolver.org/anagram-solver/"><img src="https://images.opencollective.com/anagram-solver/2666271/logo.png" alt="Anagram Solver" height="32"></a> <a href="https://icons8.com/"><img src="https://images.opencollective.com/icons8/7fa1641/logo.png" alt="Icons8" height="32"></a> <a href="https://discord.com"><img src="https://images.opencollective.com/discordapp/f9645d9/logo.png" alt="Discord" height="32"></a> <a href="https://www.gitbook.com"><img src="https://avatars.githubusercontent.com/u/7111340?v=4" alt="GitBook" height="32"></a> <a href="https://nx.dev"><img src="https://avatars.githubusercontent.com/u/23692104?v=4" alt="Nx" height="32"></a> <a href="https://herocoders.com"><img src="https://avatars.githubusercontent.com/u/37549774?v=4" alt="HeroCoders" height="32"></a> <a href="https://usenextbase.com"><img src="https://avatars.githubusercontent.com/u/145838380?v=4" alt="Nextbase Starter Kit" height="32"></a></p>
-<!--sponsorsend-->
-
-<!--techsponsorsstart-->
-<h2>Technology Sponsors</h2>
-<p><a href="https://netlify.com"><img src="https://raw.githubusercontent.com/eslint/eslint.org/main/src/assets/images/techsponsors/netlify-icon.svg" alt="Netlify" height="32"></a> <a href="https://algolia.com"><img src="https://raw.githubusercontent.com/eslint/eslint.org/main/src/assets/images/techsponsors/algolia-icon.svg" alt="Algolia" height="32"></a> <a href="https://1password.com"><img src="https://raw.githubusercontent.com/eslint/eslint.org/main/src/assets/images/techsponsors/1password-icon.svg" alt="1Password" height="32"></a></p>
-<!--techsponsorsend-->
-
-[tidelift]: https://tidelift.com/funding/github/npm/eslint
-[herodevs]: https://www.herodevs.com/support/eslint-nes?utm_source=ESLintWebsite&utm_medium=ESLintWebsite&utm_campaign=ESLintNES&utm_id=ESLintNES
+## `unescape(pattern: string, options?: GlobOptions) => string`
+
+Un-escape a glob string that may contain some escaped characters.
+
+If the `windowsPathsNoEscape` option is used, then square-brace
+escapes are removed, but not backslash escapes. For example, it
+will turn the string `'[*]'` into `*`, but it will not turn
+`'\\*'` into `'*'`, because `\` is a path separator in
+`windowsPathsNoEscape` mode.
+
+When `windowsPathsNoEscape` is not set, then both brace escapes
+and backslash escapes are removed.
+
+Slashes (and backslashes in `windowsPathsNoEscape` mode) cannot
+be escaped or unescaped.
+
+## Class `Glob`
+
+An object that can perform glob pattern traversals.
+
+### `const g = new Glob(pattern: string | string[], options: GlobOptions)`
+
+Options object is required.
+
+See full options descriptions below.
+
+Note that a previous `Glob` object can be passed as the
+`GlobOptions` to another `Glob` instantiation to re-use settings
+and caches with a new pattern.
+
+Traversal functions can be called multiple times to run the walk
+again.
+
+### `g.stream()`
+
+Stream results asynchronously,
+
+### `g.streamSync()`
+
+Stream results synchronously.
+
+### `g.iterate()`
+
+Default async iteration function. Returns an AsyncGenerator that
+iterates over the results.
+
+### `g.iterateSync()`
+
+Default sync iteration function. Returns a Generator that
+iterates over the results.
+
+### `g.walk()`
+
+Returns a Promise that resolves to the results array.
+
+### `g.walkSync()`
+
+Returns a results array.
+
+### Properties
+
+All options are stored as properties on the `Glob` object.
+
+- `opts` The options provided to the constructor.
+- `patterns` An array of parsed immutable `Pattern` objects.
+
+## Options
+
+Exported as `GlobOptions` TypeScript interface. A `GlobOptions`
+object may be provided to any of the exported methods, and must
+be provided to the `Glob` constructor.
+
+All options are optional, boolean, and false by default, unless
+otherwise noted.
+
+All resolved options are added to the Glob object as properties.
+
+If you are running many `glob` operations, you can pass a Glob
+object as the `options` argument to a subsequent operation to
+share the previously loaded cache.
+
+- `cwd` String path or `file://` string or URL object. The
+  current working directory in which to search. Defaults to
+  `process.cwd()`. See also: "Windows, CWDs, Drive Letters, and
+  UNC Paths", below.
+
+  This option may be either a string path or a `file://` URL
+  object or string.
+
+- `root` A string path resolved against the `cwd` option, which
+  is used as the starting point for absolute patterns that start
+  with `/`, (but not drive letters or UNC paths on Windows).
+
+  Note that this _doesn't_ necessarily limit the walk to the
+  `root` directory, and doesn't affect the cwd starting point for
+  non-absolute patterns. A pattern containing `..` will still be
+  able to traverse out of the root directory, if it is not an
+  actual root directory on the filesystem, and any non-absolute
+  patterns will be matched in the `cwd`. For example, the
+  pattern `/../*` with `{root:'/some/path'}` will return all
+  files in `/some`, not all files in `/some/path`. The pattern
+  `*` with `{root:'/some/path'}` will return all the entries in
+  the cwd, not the entries in `/some/path`.
+
+  To start absolute and non-absolute patterns in the same
+  path, you can use `{root:''}`. However, be aware that on
+  Windows systems, a pattern like `x:/*` or `//host/share/*` will
+  _always_ start in the `x:/` or `//host/share` directory,
+  regardless of the `root` setting.
+
+- `windowsPathsNoEscape` Use `\\` as a path separator _only_, and
+  _never_ as an escape character. If set, all `\\` characters are
+  replaced with `/` in the pattern.
+
+  Note that this makes it **impossible** to match against paths
+  containing literal glob pattern characters, but allows matching
+  with patterns constructed using `path.join()` and
+  `path.resolve()` on Windows platforms, mimicking the (buggy!)
+  behavior of Glob v7 and before on Windows. Please use with
+  caution, and be mindful of [the caveat below about Windows
+  paths](#windows). (For legacy reasons, this is also set if
+  `allowWindowsEscape` is set to the exact value `false`.)
+
+- `dot` Include `.dot` files in normal matches and `globstar`
+  matches. Note that an explicit dot in a portion of the pattern
+  will always match dot files.
+
+- `magicalBraces` Treat brace expansion like `{a,b}` as a "magic"
+  pattern. Has no effect if {@link nobrace} is set.
+
+  Only has effect on the {@link hasMagic} function, no effect on
+  glob pattern matching itself.
+
+- `dotRelative` Prepend all relative path strings with `./` (or
+  `.\` on Windows).
+
+  Without this option, returned relative paths are "bare", so
+  instead of returning `'./foo/bar'`, they are returned as
+  `'foo/bar'`.
+
+  Relative patterns starting with `'../'` are not prepended with
+  `./`, even if this option is set.
+
+- `mark` Add a `/` character to directory matches. Note that this
+  requires additional stat calls.
+
+- `nobrace` Do not expand `{a,b}` and `{1..3}` brace sets.
+
+- `noglobstar` Do not match `**` against multiple filenames. (Ie,
+  treat it as a normal `*` instead.)
+
+- `noext` Do not match "extglob" patterns such as `+(a|b)`.
+
+- `nocase` Perform a case-insensitive match. This defaults to
+  `true` on macOS and Windows systems, and `false` on all others.
+
+  **Note** `nocase` should only be explicitly set when it is
+  known that the filesystem's case sensitivity differs from the
+  platform default. If set `true` on case-sensitive file
+  systems, or `false` on case-insensitive file systems, then the
+  walk may return more or less results than expected.
+
+- `maxDepth` Specify a number to limit the depth of the directory
+  traversal to this many levels below the `cwd`.
+
+- `matchBase` Perform a basename-only match if the pattern does
+  not contain any slash characters. That is, `*.js` would be
+  treated as equivalent to `**/*.js`, matching all js files in
+  all directories.
+
+- `nodir` Do not match directories, only files. (Note: to match
+  _only_ directories, put a `/` at the end of the pattern.)
+
+  Note: when `follow` and `nodir` are both set, then symbolic
+  links to directories are also omitted.
+
+- `stat` Call `lstat()` on all entries, whether required or not
+  to determine whether it's a valid match. When used with
+  `withFileTypes`, this means that matches will include data such
+  as modified time, permissions, and so on. Note that this will
+  incur a performance cost due to the added system calls.
+
+- `ignore` string or string[], or an object with `ignore` and
+  `ignoreChildren` methods.
+
+  If a string or string[] is provided, then this is treated as a
+  glob pattern or array of glob patterns to exclude from matches.
+  To ignore all children within a directory, as well as the entry
+  itself, append `'/**'` to the ignore pattern.
+
+  **Note** `ignore` patterns are _always_ in `dot:true` mode,
+  regardless of any other settings.
+
+  If an object is provided that has `ignored(path)` and/or
+  `childrenIgnored(path)` methods, then these methods will be
+  called to determine whether any Path is a match or if its
+  children should be traversed, respectively.
+
+- `follow` Follow symlinked directories when expanding `**`
+  patterns. This can result in a lot of duplicate references in
+  the presence of cyclic links, and make performance quite bad.
+
+  By default, a `**` in a pattern will follow 1 symbolic link if
+  it is not the first item in the pattern, or none if it is the
+  first item in the pattern, following the same behavior as Bash.
+
+  Note: when `follow` and `nodir` are both set, then symbolic
+  links to directories are also omitted.
+
+- `realpath` Set to true to call `fs.realpath` on all of the
+  results. In the case of an entry that cannot be resolved, the
+  entry is omitted. This incurs a slight performance penalty, of
+  course, because of the added system calls.
+
+- `absolute` Set to true to always receive absolute paths for
+  matched files. Set to `false` to always receive relative paths
+  for matched files.
+
+  By default, when this option is not set, absolute paths are
+  returned for patterns that are absolute, and otherwise paths
+  are returned that are relative to the `cwd` setting.
+
+  This does _not_ make an extra system call to get the realpath,
+  it only does string path resolution.
+
+  `absolute` may not be used along with `withFileTypes`.
+
+- `posix` Set to true to use `/` as the path separator in
+  returned results. On posix systems, this has no effect. On
+  Windows systems, this will return `/` delimited path results,
+  and absolute paths will be returned in their full resolved UNC
+  path form, eg insted of `'C:\\foo\\bar'`, it will return
+  `//?/C:/foo/bar`.
+
+- `platform` Defaults to value of `process.platform` if
+  available, or `'linux'` if not. Setting `platform:'win32'` on
+  non-Windows systems may cause strange behavior.
+
+- `withFileTypes` Return [PathScurry](http://npm.im/path-scurry)
+  `Path` objects instead of strings. These are similar to a
+  NodeJS `Dirent` object, but with additional methods and
+  properties.
+
+  `withFileTypes` may not be used along with `absolute`.
+
+- `signal` An AbortSignal which will cancel the Glob walk when
+  triggered.
+
+- `fs` An override object to pass in custom filesystem methods.
+  See [PathScurry docs](http://npm.im/path-scurry) for what can
+  be overridden.
+
+- `scurry` A [PathScurry](http://npm.im/path-scurry) object used
+  to traverse the file system. If the `nocase` option is set
+  explicitly, then any provided `scurry` object must match this
+  setting.
+
+- `includeChildMatches` boolean, default `true`. Do not match any
+  children of any matches. For example, the pattern `**\/foo`
+  would match `a/foo`, but not `a/foo/b/foo` in this mode.
+
+  This is especially useful for cases like "find all
+  `node_modules` folders, but not the ones in `node_modules`".
+
+  In order to support this, the `Ignore` implementation must
+  support an `add(pattern: string)` method. If using the default
+  `Ignore` class, then this is fine, but if this is set to
+  `false`, and a custom `Ignore` is provided that does not have
+  an `add()` method, then it will throw an error.
+
+  **Caveat** It _only_ ignores matches that would be a descendant
+  of a previous match, and only if that descendant is matched
+  _after_ the ancestor is encountered. Since the file system walk
+  happens in indeterminate order, it's possible that a match will
+  already be added before its ancestor, if multiple or braced
+  patterns are used.
+
+  For example:
+
+  ```js
+  const results = await glob(
+    [
+      // likely to match first, since it's just a stat
+      'a/b/c/d/e/f',
+
+      // this pattern is more complicated! It must to various readdir()
+      // calls and test the results against a regular expression, and that
+      // is certainly going to take a little bit longer.
+      //
+      // So, later on, it encounters a match at 'a/b/c/d/e', but it's too
+      // late to ignore a/b/c/d/e/f, because it's already been emitted.
+      'a/[bdf]/?/[a-z]/*',
+    ],
+    { includeChildMatches: false },
+  )
+  ```
+
+  It's best to only set this to `false` if you can be reasonably
+  sure that no components of the pattern will potentially match
+  one another's file system descendants, or if the occasional
+  included child entry will not cause problems.
+
+## Glob Primer
+
+Much more information about glob pattern expansion can be found
+by running `man bash` and searching for `Pattern Matching`.
+
+"Globs" are the patterns you type when you do stuff like `ls
+*.js` on the command line, or put `build/*` in a `.gitignore`
+file.
+
+Before parsing the path part patterns, braced sections are
+expanded into a set. Braced sections start with `{` and end with
+`}`, with 2 or more comma-delimited sections within. Braced
+sections may contain slash characters, so `a{/b/c,bcd}` would
+expand into `a/b/c` and `abcd`.
+
+The following characters have special magic meaning when used in
+a path portion. With the exception of `**`, none of these match
+path separators (ie, `/` on all platforms, and `\` on Windows).
+
+- `*` Matches 0 or more characters in a single path portion.
+  When alone in a path portion, it must match at least 1
+  character. If `dot:true` is not specified, then `*` will not
+  match against a `.` character at the start of a path portion.
+- `?` Matches 1 character. If `dot:true` is not specified, then
+  `?` will not match against a `.` character at the start of a
+  path portion.
+- `[...]` Matches a range of characters, similar to a RegExp
+  range. If the first character of the range is `!` or `^` then
+  it matches any character not in the range. If the first
+  character is `]`, then it will be considered the same as `\]`,
+  rather than the end of the character class.
+- `!(pattern|pattern|pattern)` Matches anything that does not
+  match any of the patterns provided. May _not_ contain `/`
+  characters. Similar to `*`, if alone in a path portion, then
+  the path portion must have at least one character.
+- `?(pattern|pattern|pattern)` Matches zero or one occurrence of
+  the patterns provided. May _not_ contain `/` characters.
+- `+(pattern|pattern|pattern)` Matches one or more occurrences of
+  the patterns provided. May _not_ contain `/` characters.
+- `*(a|b|c)` Matches zero or more occurrences of the patterns
+  provided. May _not_ contain `/` characters.
+- `@(pattern|pat*|pat?erN)` Matches exactly one of the patterns
+  provided. May _not_ contain `/` characters.
+- `**` If a "globstar" is alone in a path portion, then it
+  matches zero or more directories and subdirectories searching
+  for matches. It does not crawl symlinked directories, unless
+  `{follow:true}` is passed in the options object. A pattern
+  like `a/b/**` will only match `a/b` if it is a directory.
+  Follows 1 symbolic link if not the first item in the pattern,
+  or 0 if it is the first item, unless `follow:true` is set, in
+  which case it follows all symbolic links.
+
+`[:class:]` patterns are supported by this implementation, but
+`[=c=]` and `[.symbol.]` style class patterns are not.
+
+### Dots
+
+If a file or directory path portion has a `.` as the first
+character, then it will not match any glob pattern unless that
+pattern's corresponding path part also has a `.` as its first
+character.
+
+For example, the pattern `a/.*/c` would match the file at
+`a/.b/c`. However the pattern `a/*/c` would not, because `*` does
+not start with a dot character.
+
+You can make glob treat dots as normal characters by setting
+`dot:true` in the options.
+
+### Basename Matching
+
+If you set `matchBase:true` in the options, and the pattern has
+no slashes in it, then it will seek for any file anywhere in the
+tree with a matching basename. For example, `*.js` would match
+`test/simple/basic.js`.
+
+### Empty Sets
+
+If no matching files are found, then an empty array is returned.
+This differs from the shell, where the pattern itself is
+returned. For example:
+
+```sh
+$ echo a*s*d*f
+a*s*d*f
+```
+
+## Comparisons to other fnmatch/glob implementations
+
+While strict compliance with the existing standards is a
+worthwhile goal, some discrepancies exist between node-glob and
+other implementations, and are intentional.
+
+The double-star character `**` is supported by default, unless
+the `noglobstar` flag is set. This is supported in the manner of
+bsdglob and bash 5, where `**` only has special significance if
+it is the only thing in a path part. That is, `a/**/b` will match
+`a/x/y/b`, but `a/**b` will not.
+
+Note that symlinked directories are not traversed as part of a
+`**`, though their contents may match against subsequent portions
+of the pattern. This prevents infinite loops and duplicates and
+the like. You can force glob to traverse symlinks with `**` by
+setting `{follow:true}` in the options.
+
+There is no equivalent of the `nonull` option. A pattern that
+does not find any matches simply resolves to nothing. (An empty
+array, immediately ended stream, etc.)
+
+If brace expansion is not disabled, then it is performed before
+any other interpretation of the glob pattern. Thus, a pattern
+like `+(a|{b),c)}`, which would not be valid in bash or zsh, is
+expanded **first** into the set of `+(a|b)` and `+(a|c)`, and
+those patterns are checked for validity. Since those two are
+valid, matching proceeds.
+
+The character class patterns `[:class:]` (posix standard named
+classes) style class patterns are supported and unicode-aware,
+but `[=c=]` (locale-specific character collation weight), and
+`[.symbol.]` (collating symbol), are not.
+
+### Repeated Slashes
+
+Unlike Bash and zsh, repeated `/` are always coalesced into a
+single path separator.
+
+### Comments and Negation
+
+Previously, this module let you mark a pattern as a "comment" if
+it started with a `#` character, or a "negated" pattern if it
+started with a `!` character.
+
+These options were deprecated in version 5, and removed in
+version 6.
+
+To specify things that should not match, use the `ignore` option.
+
+## Windows
+
+**Please only use forward-slashes in glob expressions.**
+
+Though windows uses either `/` or `\` as its path separator, only
+`/` characters are used by this glob implementation. You must use
+forward-slashes **only** in glob expressions. Back-slashes will
+always be interpreted as escape characters, not path separators.
+
+Results from absolute patterns such as `/foo/*` are mounted onto
+the root setting using `path.join`. On windows, this will by
+default result in `/foo/*` matching `C:\foo\bar.txt`.
+
+To automatically coerce all `\` characters to `/` in pattern
+strings, **thus making it impossible to escape literal glob
+characters**, you may set the `windowsPathsNoEscape` option to
+`true`.
+
+### Windows, CWDs, Drive Letters, and UNC Paths
+
+On posix systems, when a pattern starts with `/`, any `cwd`
+option is ignored, and the traversal starts at `/`, plus any
+non-magic path portions specified in the pattern.
+
+On Windows systems, the behavior is similar, but the concept of
+an "absolute path" is somewhat more involved.
+
+#### UNC Paths
+
+A UNC path may be used as the start of a pattern on Windows
+platforms. For example, a pattern like: `//?/x:/*` will return
+all file entries in the root of the `x:` drive. A pattern like
+`//ComputerName/Share/*` will return all files in the associated
+share.
+
+UNC path roots are always compared case insensitively.
+
+#### Drive Letters
+
+A pattern starting with a drive letter, like `c:/*`, will search
+in that drive, regardless of any `cwd` option provided.
+
+If the pattern starts with `/`, and is not a UNC path, and there
+is an explicit `cwd` option set with a drive letter, then the
+drive letter in the `cwd` is used as the root of the directory
+traversal.
+
+For example, `glob('/tmp', { cwd: 'c:/any/thing' })` will return
+`['c:/tmp']` as the result.
+
+If an explicit `cwd` option is not provided, and the pattern
+starts with `/`, then the traversal will run on the root of the
+drive provided as the `cwd` option. (That is, it is the result of
+`path.resolve('/')`.)
+
+## Race Conditions
+
+Glob searching, by its very nature, is susceptible to race
+conditions, since it relies on directory walking.
+
+As a result, it is possible that a file that exists when glob
+looks for it may have been deleted or modified by the time it
+returns the result.
+
+By design, this implementation caches all readdir calls that it
+makes, in order to cut down on system overhead. However, this
+also makes it even more susceptible to races, especially if the
+cache object is reused between glob calls.
+
+Users are thus advised not to use a glob result as a guarantee of
+filesystem state in the face of rapid changes. For the vast
+majority of operations, this is never a problem.
+
+### See Also:
+
+- `man sh`
+- `man bash` [Pattern
+  Matching](https://www.gnu.org/software/bash/manual/html_node/Pattern-Matching.html)
+- `man 3 fnmatch`
+- `man 5 gitignore`
+- [minimatch documentation](https://github.com/isaacs/minimatch)
+
+## Glob Logo
+
+Glob's logo was created by [Tanya
+Brassie](http://tanyabrassie.com/). Logo files can be found
+[here](https://github.com/isaacs/node-glob/tree/master/logo).
+
+The logo is licensed under a [Creative Commons
+Attribution-ShareAlike 4.0 International
+License](https://creativecommons.org/licenses/by-sa/4.0/).
+
+## Contributing
+
+Any change to behavior (including bugfixes) must come with a
+test.
+
+Patches that fail tests or reduce performance will be rejected.
+
+```sh
+# to run tests
+npm test
+
+# to re-generate test fixtures
+npm run test-regen
+
+# run the benchmarks
+npm run bench
+
+# to profile javascript
+npm run prof
+```
+
+## Comparison to Other JavaScript Glob Implementations
+
+**tl;dr**
+
+- If you want glob matching that is as faithful as possible to
+  Bash pattern expansion semantics, and as fast as possible
+  within that constraint, _use this module_.
+- If you are reasonably sure that the patterns you will encounter
+  are relatively simple, and want the absolutely fastest glob
+  matcher out there, _use [fast-glob](http://npm.im/fast-glob)_.
+- If you are reasonably sure that the patterns you will encounter
+  are relatively simple, and want the convenience of
+  automatically respecting `.gitignore` files, _use
+  [globby](http://npm.im/globby)_.
+
+There are some other glob matcher libraries on npm, but these
+three are (in my opinion, as of 2023) the best.
+
+---
+
+**full explanation**
+
+Every library reflects a set of opinions and priorities in the
+trade-offs it makes. Other than this library, I can personally
+recommend both [globby](http://npm.im/globby) and
+[fast-glob](http://npm.im/fast-glob), though they differ in their
+benefits and drawbacks.
+
+Both have very nice APIs and are reasonably fast.
+
+`fast-glob` is, as far as I am aware, the fastest glob
+implementation in JavaScript today. However, there are many
+cases where the choices that `fast-glob` makes in pursuit of
+speed mean that its results differ from the results returned by
+Bash and other sh-like shells, which may be surprising.
+
+In my testing, `fast-glob` is around 10-20% faster than this
+module when walking over 200k files nested 4 directories
+deep[1](#fn-webscale). However, there are some inconsistencies
+with Bash matching behavior that this module does not suffer
+from:
+
+- `**` only matches files, not directories
+- `..` path portions are not handled unless they appear at the
+  start of the pattern
+- `./!(<pattern>)` will not match any files that _start_ with
+  `<pattern>`, even if they do not match `<pattern>`. For
+  example, `!(9).txt` will not match `9999.txt`.
+- Some brace patterns in the middle of a pattern will result in
+  failing to find certain matches.
+- Extglob patterns are allowed to contain `/` characters.
+
+Globby exhibits all of the same pattern semantics as fast-glob,
+(as it is a wrapper around fast-glob) and is slightly slower than
+node-glob (by about 10-20% in the benchmark test set, or in other
+words, anywhere from 20-50% slower than fast-glob). However, it
+adds some API conveniences that may be worth the costs.
+
+- Support for `.gitignore` and other ignore files.
+- Support for negated globs (ie, patterns starting with `!`
+  rather than using a separate `ignore` option).
+
+The priority of this module is "correctness" in the sense of
+performing a glob pattern expansion as faithfully as possible to
+the behavior of Bash and other sh-like shells, with as much speed
+as possible.
+
+Note that prior versions of `node-glob` are _not_ on this list.
+Former versions of this module are far too slow for any cases
+where performance matters at all, and were designed with APIs
+that are extremely dated by current JavaScript standards.
+
+---
+
+<small id="fn-webscale">[1]: In the cases where this module
+returns results and `fast-glob` doesn't, it's even faster, of
+course.</small>
+
+![lumpy space princess saying 'oh my GLOB'](https://github.com/isaacs/node-glob/raw/main/oh-my-glob.gif)
+
+### Benchmark Results
+
+First number is time, smaller is better.
+
+Second number is the count of results returned.
+
+```
+--- pattern: '**' ---
+~~ sync ~~
+node fast-glob sync             0m0.598s  200364
+node globby sync                0m0.765s  200364
+node current globSync mjs       0m0.683s  222656
+node current glob syncStream    0m0.649s  222656
+~~ async ~~
+node fast-glob async            0m0.350s  200364
+node globby async               0m0.509s  200364
+node current glob async mjs     0m0.463s  222656
+node current glob stream        0m0.411s  222656
+
+--- pattern: '**/..' ---
+~~ sync ~~
+node fast-glob sync             0m0.486s  0
+node globby sync                0m0.769s  200364
+node current globSync mjs       0m0.564s  2242
+node current glob syncStream    0m0.583s  2242
+~~ async ~~
+node fast-glob async            0m0.283s  0
+node globby async               0m0.512s  200364
+node current glob async mjs     0m0.299s  2242
+node current glob stream        0m0.312s  2242
+
+--- pattern: './**/0/**/0/**/0/**/0/**/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.490s  10
+node globby sync                0m0.517s  10
+node current globSync mjs       0m0.540s  10
+node current glob syncStream    0m0.550s  10
+~~ async ~~
+node fast-glob async            0m0.290s  10
+node globby async               0m0.296s  10
+node current glob async mjs     0m0.278s  10
+node current glob stream        0m0.302s  10
+
+--- pattern: './**/[01]/**/[12]/**/[23]/**/[45]/**/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.500s  160
+node globby sync                0m0.528s  160
+node current globSync mjs       0m0.556s  160
+node current glob syncStream    0m0.573s  160
+~~ async ~~
+node fast-glob async            0m0.283s  160
+node globby async               0m0.301s  160
+node current glob async mjs     0m0.306s  160
+node current glob stream        0m0.322s  160
+
+--- pattern: './**/0/**/0/**/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.502s  5230
+node globby sync                0m0.527s  5230
+node current globSync mjs       0m0.544s  5230
+node current glob syncStream    0m0.557s  5230
+~~ async ~~
+node fast-glob async            0m0.285s  5230
+node globby async               0m0.305s  5230
+node current glob async mjs     0m0.304s  5230
+node current glob stream        0m0.310s  5230
+
+--- pattern: '**/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.580s  200023
+node globby sync                0m0.771s  200023
+node current globSync mjs       0m0.685s  200023
+node current glob syncStream    0m0.649s  200023
+~~ async ~~
+node fast-glob async            0m0.349s  200023
+node globby async               0m0.509s  200023
+node current glob async mjs     0m0.427s  200023
+node current glob stream        0m0.388s  200023
+
+--- pattern: '{**/*.txt,**/?/**/*.txt,**/?/**/?/**/*.txt,**/?/**/?/**/?/**/*.txt,**/?/**/?/**/?/**/?/**/*.txt}' ---
+~~ sync ~~
+node fast-glob sync             0m0.589s  200023
+node globby sync                0m0.771s  200023
+node current globSync mjs       0m0.716s  200023
+node current glob syncStream    0m0.684s  200023
+~~ async ~~
+node fast-glob async            0m0.351s  200023
+node globby async               0m0.518s  200023
+node current glob async mjs     0m0.462s  200023
+node current glob stream        0m0.468s  200023
+
+--- pattern: '**/5555/0000/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.496s  1000
+node globby sync                0m0.519s  1000
+node current globSync mjs       0m0.539s  1000
+node current glob syncStream    0m0.567s  1000
+~~ async ~~
+node fast-glob async            0m0.285s  1000
+node globby async               0m0.299s  1000
+node current glob async mjs     0m0.305s  1000
+node current glob stream        0m0.301s  1000
+
+--- pattern: './**/0/**/../[01]/**/0/../**/0/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.484s  0
+node globby sync                0m0.507s  0
+node current globSync mjs       0m0.577s  4880
+node current glob syncStream    0m0.586s  4880
+~~ async ~~
+node fast-glob async            0m0.280s  0
+node globby async               0m0.298s  0
+node current glob async mjs     0m0.327s  4880
+node current glob stream        0m0.324s  4880
+
+--- pattern: '**/????/????/????/????/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.547s  100000
+node globby sync                0m0.673s  100000
+node current globSync mjs       0m0.626s  100000
+node current glob syncStream    0m0.618s  100000
+~~ async ~~
+node fast-glob async            0m0.315s  100000
+node globby async               0m0.414s  100000
+node current glob async mjs     0m0.366s  100000
+node current glob stream        0m0.345s  100000
+
+--- pattern: './{**/?{/**/?{/**/?{/**/?,,,,},,,,},,,,},,,}/**/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.588s  100000
+node globby sync                0m0.670s  100000
+node current globSync mjs       0m0.717s  200023
+node current glob syncStream    0m0.687s  200023
+~~ async ~~
+node fast-glob async            0m0.343s  100000
+node globby async               0m0.418s  100000
+node current glob async mjs     0m0.519s  200023
+node current glob stream        0m0.451s  200023
+
+--- pattern: '**/!(0|9).txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.573s  160023
+node globby sync                0m0.731s  160023
+node current globSync mjs       0m0.680s  180023
+node current glob syncStream    0m0.659s  180023
+~~ async ~~
+node fast-glob async            0m0.345s  160023
+node globby async               0m0.476s  160023
+node current glob async mjs     0m0.427s  180023
+node current glob stream        0m0.388s  180023
+
+--- pattern: './{*/**/../{*/**/../{*/**/../{*/**/../{*/**,,,,},,,,},,,,},,,,},,,,}/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.483s  0
+node globby sync                0m0.512s  0
+node current globSync mjs       0m0.811s  200023
+node current glob syncStream    0m0.773s  200023
+~~ async ~~
+node fast-glob async            0m0.280s  0
+node globby async               0m0.299s  0
+node current glob async mjs     0m0.617s  200023
+node current glob stream        0m0.568s  200023
+
+--- pattern: './*/**/../*/**/../*/**/../*/**/../*/**/../*/**/../*/**/../*/**/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.485s  0
+node globby sync                0m0.507s  0
+node current globSync mjs       0m0.759s  200023
+node current glob syncStream    0m0.740s  200023
+~~ async ~~
+node fast-glob async            0m0.281s  0
+node globby async               0m0.297s  0
+node current glob async mjs     0m0.544s  200023
+node current glob stream        0m0.464s  200023
+
+--- pattern: './*/**/../*/**/../*/**/../*/**/../*/**/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.486s  0
+node globby sync                0m0.513s  0
+node current globSync mjs       0m0.734s  200023
+node current glob syncStream    0m0.696s  200023
+~~ async ~~
+node fast-glob async            0m0.286s  0
+node globby async               0m0.296s  0
+node current glob async mjs     0m0.506s  200023
+node current glob stream        0m0.483s  200023
+
+--- pattern: './0/**/../1/**/../2/**/../3/**/../4/**/../5/**/../6/**/../7/**/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.060s  0
+node globby sync                0m0.074s  0
+node current globSync mjs       0m0.067s  0
+node current glob syncStream    0m0.066s  0
+~~ async ~~
+node fast-glob async            0m0.060s  0
+node globby async               0m0.075s  0
+node current glob async mjs     0m0.066s  0
+node current glob stream        0m0.067s  0
+
+--- pattern: './**/?/**/?/**/?/**/?/**/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.568s  100000
+node globby sync                0m0.651s  100000
+node current globSync mjs       0m0.619s  100000
+node current glob syncStream    0m0.617s  100000
+~~ async ~~
+node fast-glob async            0m0.332s  100000
+node globby async               0m0.409s  100000
+node current glob async mjs     0m0.372s  100000
+node current glob stream        0m0.351s  100000
+
+--- pattern: '**/*/**/*/**/*/**/*/**' ---
+~~ sync ~~
+node fast-glob sync             0m0.603s  200113
+node globby sync                0m0.798s  200113
+node current globSync mjs       0m0.730s  222137
+node current glob syncStream    0m0.693s  222137
+~~ async ~~
+node fast-glob async            0m0.356s  200113
+node globby async               0m0.525s  200113
+node current glob async mjs     0m0.508s  222137
+node current glob stream        0m0.455s  222137
+
+--- pattern: './**/*/**/*/**/*/**/*/**/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.622s  200000
+node globby sync                0m0.792s  200000
+node current globSync mjs       0m0.722s  200000
+node current glob syncStream    0m0.695s  200000
+~~ async ~~
+node fast-glob async            0m0.369s  200000
+node globby async               0m0.527s  200000
+node current glob async mjs     0m0.502s  200000
+node current glob stream        0m0.481s  200000
+
+--- pattern: '**/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.588s  200023
+node globby sync                0m0.771s  200023
+node current globSync mjs       0m0.684s  200023
+node current glob syncStream    0m0.658s  200023
+~~ async ~~
+node fast-glob async            0m0.352s  200023
+node globby async               0m0.516s  200023
+node current glob async mjs     0m0.432s  200023
+node current glob stream        0m0.384s  200023
+
+--- pattern: './**/**/**/**/**/**/**/**/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.589s  200023
+node globby sync                0m0.766s  200023
+node current globSync mjs       0m0.682s  200023
+node current glob syncStream    0m0.652s  200023
+~~ async ~~
+node fast-glob async            0m0.352s  200023
+node globby async               0m0.523s  200023
+node current glob async mjs     0m0.436s  200023
+node current glob stream        0m0.380s  200023
+
+--- pattern: '**/*/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.592s  200023
+node globby sync                0m0.776s  200023
+node current globSync mjs       0m0.691s  200023
+node current glob syncStream    0m0.659s  200023
+~~ async ~~
+node fast-glob async            0m0.357s  200023
+node globby async               0m0.513s  200023
+node current glob async mjs     0m0.471s  200023
+node current glob stream        0m0.424s  200023
+
+--- pattern: '**/*/**/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.585s  200023
+node globby sync                0m0.766s  200023
+node current globSync mjs       0m0.694s  200023
+node current glob syncStream    0m0.664s  200023
+~~ async ~~
+node fast-glob async            0m0.350s  200023
+node globby async               0m0.514s  200023
+node current glob async mjs     0m0.472s  200023
+node current glob stream        0m0.424s  200023
+
+--- pattern: '**/[0-9]/**/*.txt' ---
+~~ sync ~~
+node fast-glob sync             0m0.544s  100000
+node globby sync                0m0.636s  100000
+node current globSync mjs       0m0.626s  100000
+node current glob syncStream    0m0.621s  100000
+~~ async ~~
+node fast-glob async            0m0.322s  100000
+node globby async               0m0.404s  100000
+node current glob async mjs     0m0.360s  100000
+node current glob stream        0m0.352s  100000
+```
