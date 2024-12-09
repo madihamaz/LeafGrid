@@ -14,8 +14,9 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-__exportStar(require("./eslint-utils"), exports);
-__exportStar(require("./helpers"), exports);
-__exportStar(require("./misc"), exports);
+__exportStar(require("./astUtilities"), exports);
+__exportStar(require("./PatternMatcher"), exports);
 __exportStar(require("./predicates"), exports);
+__exportStar(require("./ReferenceTracker"), exports);
+__exportStar(require("./scopeAnalysis"), exports);
 //# sourceMappingURL=index.js.map
